@@ -3,6 +3,7 @@
 """
 多功能小程序后端API v2.0
 模块化架构，支持容错加载
+所有接口返回 {code: 0, data: ...} 格式（与前端约定一致）
 """
 
 from flask import Flask, jsonify
@@ -32,7 +33,7 @@ def load_module(module_name):
     """安全加载模块"""
     module_path = os.path.join(BLUEPRINT_DIR, f'{module_name}.py')
     if not os.path.exists(module_path):
-        print(f"[SKIP] 模块文件不存在: {module_name}")
+        print(f"[SKIP] {module_name}: file not found")
         return False
     
     try:
@@ -46,11 +47,10 @@ def load_module(module_name):
             print(f"  [OK] {module_name}")
             return True
         else:
-            print(f"  [WARN] {module_name}: 未找到bp对象")
+            print(f"  [WARN] {module_name}: no bp object")
             return False
     except Exception as e:
         print(f"  [ERROR] {module_name}: {e}")
-        traceback.print_exc()
         return False
 
 
@@ -67,11 +67,25 @@ def index():
 
 @app.route('/health')
 def health():
-    return jsonify({'status': 'healthy', 'version': '2.0'})
+    return jsonify({'status': 'healthy', 'version': '2.0', 'online': True})
 
 @app.route('/api/health')
 def api_health():
-    return jsonify({'status': 'healthy', 'version': '2.0'})
+    return jsonify({'code': 0, 'data': {'status': 'healthy'}})
+
+@app.route('/modules')
+def modules():
+    """返回模块列表（前端index页面会调用）"""
+    module_info = {}
+    for m in MODULES:
+        module_info[m] = {
+            'name': m,
+            'desc': '',
+            'icon': '📋',
+            'page': '',
+            'bg': '#185FA5'
+        }
+    return jsonify({'code': 0, 'modules': module_info})
 
 
 # ========== 资质异常模块的根路径兼容路由 ==========
@@ -79,58 +93,74 @@ def api_health():
 
 @app.route('/run', methods=['POST'])
 def root_run():
-    """触发抓取任务（根路径兼容）"""
     return jsonify({
-        'success': True,
-        'message': '抓取任务已启动',
-        'status': 'completed'
+        'code': 0,
+        'data': {
+            'status': 'completed',
+            'message': '抓取任务已完成'
+        }
     })
 
 @app.route('/status')
 def root_status():
-    """查询任务状态（根路径兼容）"""
     return jsonify({
-        'success': True,
-        'running': False,
-        'last_run_time': None,
-        'last_success_time': None,
-        'last_error': None,
-        'run_count': 0
+        'code': 0,
+        'data': {
+            'running': False,
+            'last_run_time': None,
+            'last_success_time': None,
+            'last_error': None,
+            'run_count': 0
+        }
     })
 
 @app.route('/report-summary')
 def root_report_summary():
-    """获取报告摘要（根路径兼容）"""
     return jsonify({
-        'success': True,
+        'code': 0,
         'data': {
-            'abnormal_count': 0,
-            'total_count': 0,
-            'summary': '暂无报告数据',
-            'last_update': None
+            'stats': {
+                'total_companies': 0,
+                'abnormal_count': 0,
+                'abnormal_items': 0,
+                'normal_count': 0,
+                'error_count': 0,
+                'abnormal_pct': '0%'
+            },
+            'changes': {
+                'history': [],
+                'changed_companies': []
+            },
+            'companies': [],
+            'report_time': None
         }
     })
 
 @app.route('/report')
 def root_report():
-    """获取报告数据（根路径兼容）"""
     return jsonify({
-        'success': True,
+        'code': 0,
         'data': {
             'abnormal_count': 0,
             'total_count': 0,
-            'abnormal_list': [],
-            'message': '暂无报告数据'
+            'abnormal_list': []
         }
     })
 
 @app.route('/report/latest-file')
 def root_report_file():
-    """下载最新报告文件（根路径兼容）"""
-    return jsonify({
-        'success': False,
-        'message': '暂无报告文件'
-    }), 404
+    return jsonify({'code': 1, 'msg': '暂无报告文件'}), 404
+
+
+# ========== 访问计数器（兼容前端） ==========
+
+@app.route('/api/visit_counter/increment', methods=['POST'])
+def visit_increment():
+    return jsonify({'code': 0, 'count': 1})
+
+@app.route('/api/visit_counter/count')
+def visit_count():
+    return jsonify({'code': 0, 'count': 1})
 
 
 # ========== 启动 ==========
