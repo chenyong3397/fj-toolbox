@@ -17,15 +17,54 @@ CORS(app)
 
 PORT = int(os.environ.get('PORT', 5000))
 
-# 功能模块列表
-MODULES = [
-    'cert_title',
-    'cert_position',
-    'cert_registration',
-    'company_monitor',
-    'tech_staff',
-    'qualify_abnormal'
-]
+# 功能模块列表（含中文显示信息）
+MODULES = ['cert_title', 'cert_position', 'cert_registration', 'company_monitor', 'tech_staff', 'qualify_abnormal']
+
+# 模块中文信息（供 /modules 接口返回给前端首页显示）
+MODULE_INFO = {
+    'qualify_abnormal': {
+        'name': '异常预警',
+        'desc': '福建省质量检测资质异常企业查询',
+        'icon': '🔍',
+        'page': '/pages/qualify/qualify',
+        'bg': '#185FA5'
+    },
+    'company_monitor': {
+        'name': '审批状态',
+        'desc': '搜索企业，查看资质办理当前状态',
+        'icon': '📡',
+        'page': '/pages/monitor/monitor',
+        'bg': '#1A7F37'
+    },
+    'tech_staff': {
+        'name': '技术人员',
+        'desc': '搜索企业，获取技术人员清单并导出Excel',
+        'icon': '👥',
+        'page': '/pages/tech_staff/tech_staff',
+        'bg': '#E65100'
+    },
+    'cert_registration': {
+        'name': '注册证',
+        'desc': '输入姓名或身份证号，查询建设行业注册证信息',
+        'icon': '📘',
+        'page': '/pages/cert_registration/cert_registration',
+        'bg': '#5C6BC0'
+    },
+    'cert_title': {
+        'name': '职称证',
+        'desc': '专业技术人员职称证书查询与管理',
+        'icon': '🎓',
+        'page': '/pages/cert_title/cert_title',
+        'bg': '#7E57C2'
+    },
+    'cert_position': {
+        'name': '岗位证',
+        'desc': '输入姓名和身份证号，查询岗位证书信息',
+        'icon': '🪪',
+        'page': '/pages/cert_position/cert_position',
+        'bg': '#26A69A'
+    }
+}
 
 BLUEPRINT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "blueprints")
 
@@ -75,15 +114,16 @@ def api_health():
 
 @app.route('/modules')
 def modules():
-    """返回模块列表（前端index页面会调用）"""
+    """返回模块列表（前端index页面会调用，覆盖本地功能列表）"""
     module_info = {}
     for m in MODULES:
+        info = MODULE_INFO.get(m, {})
         module_info[m] = {
-            'name': m,
-            'desc': '',
-            'icon': '📋',
-            'page': '',
-            'bg': '#185FA5'
+            'name': info.get('name', m),
+            'desc': info.get('desc', ''),
+            'icon': info.get('icon', '📋'),
+            'page': info.get('page', ''),
+            'bg': info.get('bg', '#185FA5')
         }
     return jsonify({'code': 0, 'modules': module_info})
 
