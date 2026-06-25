@@ -80,7 +80,7 @@ def get_output_dir():
 
 
 def run_scrape_task():
-    """后台运行抓取任务（直接调用 scraper，避免子进程问题）"""
+    """后台运行抓取任务（使用子进程，避免导入问题）"""
     global task_status
     with status_lock:
         task_status['running'] = True
@@ -89,62 +89,43 @@ def run_scrape_task():
 
     import sys
     import io
+    import subprocess
+
     project_root = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-    sys.path.insert(0, project_root)
+    script_path = os.path.join(project_root, 'scrape_qualify_abnormal.py')
+    output_dir = os.path.join(project_root, 'output')
+    log_file = os.path.join(
+        output_dir,
+        f"api_run_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+    )
+
+    # 确保输出目录存在
+    os.makedirs(output_dir, exist_ok=True)
 
     try:
-        from scrape_qualify_abnormal import (
-            run_scrape, generate_excel, check_whats_changed,
-            load_historical_baseline, save_change_history, load_config
-        )
+        print(f"[INFO] 开始抓取 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"[INFO] 脚本路径: {script_path}")
 
-        # 使用 scraper 自带的 load_config（处理类型转换）
-        cfg_file = os.path.join(project_root, 'config.ini')
-        config = load_config(cfg_file)
+        # 使用子进程运行脚本
+        with open(log_file, 'w', encoding='utf-8') as f:
+            process = subprocess.run(
+                [sys.executable, script_path],
+                cwd=project_root,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                timeout=300  # 5分钟超时
+            )
 
-        # 准备日志文件（捕获 scraper 的 print 输出）
-        log_file = os.path.join(
-            get_output_dir(),
-            f"api_run_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-        )
+            # 写入日志
+            output = process.stdout.decode('utf-8', errors='replace')
+            f.write(output)
+            print(output)
 
-        # 重定向 stdout 以捕获输出
-        old_stdout = sys.stdout
-        log_buffer = io.StringIO()
-        sys.stdout = log_buffer
+        if process.returncode == 0:
+            print(f"[OK] 抓取任务完成 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-        try:
-            print(f"[INFO] 开始抓取 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-
-            # 1. 运行抓取
-            result = run_scrape(config)
-
-            if not result:
-                print("[ERROR] 抓取失败：无返回结果")
-                with status_lock:
-                    task_status['running'] = False
-                    task_status['last_error'] = '抓取失败：无返回结果'
-                return
-
-            # 2. 生成 Excel
-            output_dir = config["output"]["output_dir"]
-            prefix = config["output"]["filename_prefix"]
-            output_file, latest_file = generate_excel(result, config)
-            print(f"[INFO] Excel 已生成: {output_file}")
-
-            # 3. 加载历史基准数据（7天前）
-            old_result = load_historical_baseline(output_dir, prefix, days_ago=7)
-
-            # 4. 变化检测
-            change_result = check_whats_changed(old_result, result)
-            print(f"[INFO] 变化检测: has_change={change_result['has_change']}, messages={len(change_result['messages'])}")
-
-            # 5. 保存变化历史
-            save_change_history(config, change_result)
-            print(f"[INFO] 变化历史已保存")
-
-            # 6. 读取最终结果
-            result_file = os.path.join(get_output_dir(), "质量检测_资质异常_最新.json")
+            # 读取最终结果
+            result_file = os.path.join(output_dir, "质量检测_资质异常_最新.json")
             final_result = None
             if os.path.exists(result_file):
                 with open(result_file, 'r', encoding='utf-8') as f:
@@ -156,27 +137,35 @@ def run_scrape_task():
                 task_status['last_success_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 task_status['last_result'] = final_result
                 task_status['run_count'] += 1
+        else:
+            error_msg = f"脚本退出码: {process.returncode}"
+            print(f"[ERROR] {error_msg}")
+            with status_lock:
+                task_status['running'] = False
+                task_status['last_error'] = error_msg
 
-            print(f"[OK] 抓取任务完成 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-
-        finally:
-            sys.stdout = old_stdout
-            # 写入日志文件
-            log_content = log_buffer.getvalue()
-            with open(log_file, 'w', encoding='utf-8') as f:
-                f.write(log_content)
-            log_buffer.close()
-
-    except Exception as e:
-        import traceback
+    except subprocess.TimeoutExpired:
+        error_msg = "抓取任务超时（5分钟）"
+        print(f"[ERROR] {error_msg}")
         with status_lock:
             task_status['running'] = False
-            task_status['last_error'] = str(e)
-        print(f"[ERROR] 抓取任务失败: {e}")
+            task_status['last_error'] = error_msg
+    except Exception as e:
+        import traceback
+        error_msg = str(e)
+        print(f"[ERROR] 抓取任务失败: {error_msg}")
         traceback.print_exc()
+        with status_lock:
+            task_status['running'] = False
+            task_status['last_error'] = error_msg
 
         # 确保日志被保存
         try:
+            with open(log_file, 'a', encoding='utf-8') as f:
+                f.write(f"\n[ERROR] {error_msg}\n")
+                f.write(traceback.format_exc())
+        except Exception:
+            pass
             log_content = log_buffer.getvalue()
             with open(log_file, 'w', encoding='utf-8') as f:
                 f.write(log_content)
