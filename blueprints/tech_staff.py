@@ -7,26 +7,21 @@ bp = Blueprint('tech_staff', __name__)
 
 @bp.route('/info')
 def info():
-    return jsonify({'module': 'tech_staff', 'status': 'active'})
+    return jsonify({'code': 0, 'data': {'module': 'tech_staff', 'status': 'active'}})
 
 @bp.route('/search')
 def search():
     """搜索企业"""
-    keyword = request.args.get('keyword', '') or request.args.get('company', '')
+    keyword = request.args.get('keyword', '').strip() or request.args.get('company', '').strip()
     
     if not keyword:
-        return jsonify({
-            'success': False,
-            'message': '请输入企业名称'
-        }), 400
+        return jsonify({'code': 1, 'msg': '请输入企业名称'})
     
     return jsonify({
-        'success': True,
-        'message': '查询成功',
-        'data': {
-            'keyword': keyword,
-            'result': '暂无数据（后端简化版）'
-        }
+        'code': 0,
+        'data': [],
+        'total': 0,
+        'msg': '暂无数据（后端简化版）'
     })
 
 @bp.route('/technicians')
@@ -35,18 +30,16 @@ def technicians():
     company = request.args.get('company', '')
     
     return jsonify({
-        'success': True,
-        'message': '查询成功',
+        'code': 0,
         'data': {
-            'company': company,
-            'technicians': []
-        }
+            'total': 0,
+            'technicians': [],
+            'stats': {}
+        },
+        'msg': '暂无数据（后端简化版）'
     })
 
 @bp.route('/export')
 def export():
     """导出Excel"""
-    return jsonify({
-        'success': False,
-        'message': '导出功能暂未开放'
-    })
+    return jsonify({'code': 1, 'msg': '导出功能暂未开放'})
