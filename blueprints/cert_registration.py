@@ -7,29 +7,28 @@ bp = Blueprint('cert_registration', __name__)
 
 @bp.route('/info')
 def info():
-    return jsonify({'module': 'cert_registration', 'status': 'active'})
+    return jsonify({'code': 0, 'data': {'module': 'cert_registration', 'status': 'active'}})
 
 @bp.route('/search', methods=['POST'])
 def search():
     """查询注册证"""
     data = request.get_json(silent=True) or {}
-    name = data.get('name', '')
-    id_card = data.get('idCard', '')
-    page = data.get('page', 1)
+    name = data.get('name', '').strip()
+    id_card = data.get('idCard', '').strip()
+    page = data.get('page', 0)
+    page_size = data.get('pageSize', 15)
     
     if not name and not id_card:
-        return jsonify({
-            'success': False,
-            'message': '请输入姓名或身份证号'
-        }), 400
+        return jsonify({'code': 1, 'msg': '请输入姓名或身份证号'})
     
+    # 返回前端期望的格式: {code: 0, data: {list: [...], total: N, page: N}}
     return jsonify({
-        'success': True,
-        'message': '查询成功',
+        'code': 0,
         'data': {
-            'name': name,
-            'idCard': id_card,
+            'list': [],
+            'total': 0,
             'page': page,
-            'result': '暂无数据（后端简化版）'
-        }
+            'pageSize': page_size
+        },
+        'msg': '暂无数据（后端简化版）'
     })
