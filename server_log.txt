@@ -1,0 +1,32 @@
+[CONFIG] Token加载成功, Port=5678
+[CONFIG] 微信小程序AppID已配置: wxcc739d...
+==================================================
+  多功能小程序后端 - 正在启动
+==================================================
+[INFO] 发现并注册功能模块:
+  [OK] 注册模块: feature_template     -> /api/feature_template
+  [OK] 注册模块: qualify_abnormal     -> /api/qualify_abnormal
+  [OK] 已注册根路径兼容路由（/run, /status, /report ...）
+[INFO] 共注册 2 个功能模块: feature_template, qualify_abnormal
+==================================================
+  监听地址 : http://0.0.0.0:5678
+  Token    : fj-qualify-2026
+  功能模块 : feature_template, qualify_abnormal
+  接口列表 :
+    GET  /               - 服务说明
+    GET  /health         - 健康检查（无需Token）
+    GET  /modules        - 列出所有功能模块
+    --- /api/feature_template/...   - feature_template 功能接口
+    --- /api/qualify_abnormal/...   - qualify_abnormal 功能接口
+    微信小程序访问地址: http://27.155.183.10:5678
+==================================================
+
+ * Serving Flask app 'app'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5678
+ * Running on http://192.168.1.25:5678
+Press CTRL+C to quit
+127.0.0.1 - - [24/Jun/2026 10:24:11] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [24/Jun/2026 10:26:14] "GET /health HTTP/1.1" 200 -

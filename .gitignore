@@ -1,0 +1,52 @@
+# 微信小程序前端（Renderer只部署后端）
+miniprogram/
+
+# Windows 虚拟环境
+portable_venv/
+
+# EXE 打包产物
+exe_package/
+build/
+dist/
+
+# 调试/临时文件
+debug_*.html
+debug_*.js
+debug_*.png
+debug_*.xml
+debug_*.jpeg
+captcha_*.jpg
+captcha_*.png
+captcha_*.jpeg
+raw_response.json
+test_result.json
+analyze_*.py
+
+# Windows 脚本（Renderer 跑 Linux）
+*.bat
+auto_start.*
+install_*
+run_*
+setup.*
+start_server.*
+test_notify.*
+verify_setup.*
+
+# 杂项
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store
+*.log
+.env
+script45.txt
+README_OFFLINE.txt
+SERVER_DEPLOY_GUIDE.txt
+ip_monitor.py
+notify.py
+last_ip.txt
+schedule_manager.py
+schedule_manager.bat
+scrape_qualify_abnormal.py
+output/
+data/visit_counter.json
