@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""职称证查询模块 - 简化版"""
+"""职称证查询模块"""
 
 from flask import Blueprint, jsonify, request
 
-bp = Blueprint('cert_title', __name__, url_prefix='/api/cert_title')
+bp = Blueprint('cert_title', __name__)
 
 @bp.route('/info')
 def info():
@@ -11,21 +11,28 @@ def info():
     return jsonify({
         'module': 'cert_title',
         'status': 'active',
-        'version': '1.0'
+        'version': '2.0'
     })
 
-@bp.route('/query')
-def query():
-    """查询接口（简化版）"""
-    name = request.args.get('name', '')
-    id_card = request.args.get('idCard', '')
+@bp.route('/search', methods=['POST'])
+def search():
+    """查询职称证"""
+    data = request.get_json(silent=True) or {}
+    name = data.get('name', '')
+    id_card = data.get('idCard', '')
+    
+    if not name or not id_card:
+        return jsonify({
+            'success': False,
+            'message': '请输入姓名和身份证号'
+        }), 400
     
     return jsonify({
         'success': True,
-        'message': '查询成功（简化版）',
+        'message': '查询成功',
         'data': {
             'name': name,
-            'idCard': id_card[-4:] if id_card else '',
-            'result': '测试数据'
+            'idCard': id_card,
+            'result': '暂无数据（后端简化版）'
         }
     })
