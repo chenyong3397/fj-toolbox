@@ -39,14 +39,11 @@ __pycache__/
 .DS_Store
 *.log
 .env
+.ssh/
 script45.txt
 README_OFFLINE.txt
 SERVER_DEPLOY_GUIDE.txt
 ip_monitor.py
-notify.py
 last_ip.txt
-schedule_manager.py
-schedule_manager.bat
-scrape_qualify_abnormal.py
 output/
 data/visit_counter.json
