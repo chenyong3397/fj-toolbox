@@ -1,0 +1,26 @@
+name: Keep Render Service Alive
+
+on:
+  schedule:
+    # Every 10 minutes
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://fj-toolbox.onrender.com/health)
+          echo "Health check returned: HTTP $response"
+          if [ "$response" = "200" ]; then
+            echo "✅ Service is alive"
+          else
+            echo "⚠️ Service returned HTTP $response"
+          fi
+
+      - name: Ping root endpoint (double keepalive)
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://fj-toolbox.onrender.com/)
+          echo "Root check returned: HTTP $response"
